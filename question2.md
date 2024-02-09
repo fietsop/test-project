@@ -30,7 +30,7 @@ resource "null_resource" "deny_network_access" {
           secedit /configure /db $env:windir\security\database\secedit.sdb /cfg C:\temp\temp.cfg /areas USER_RIGHTS
       }
 
-      # Clean up temporary files
+      #Clean up temporary files
       Remove-Item C:\temp\temp.cfg
     EOF
   }
