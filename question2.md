@@ -4,6 +4,7 @@ To address the compliance controls specified in the CIS Benchmark Level 1 for Wi
     18.9.45.4.1.2 Ensure 'Configure Attack Surface Reduction rules: Set the state for each ASR rule' is configured – ‘26190899-1602-49e8-8b27-eb1d0a1ce869'
 
 Solution Overview:
+
 1. Deny Access to Computer from the Network:
 
 I will create a Terraform script that configures the security policy to deny network access for specified accounts.
