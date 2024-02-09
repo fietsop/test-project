@@ -102,14 +102,14 @@ resource "aws_instance" "bastion_instance" {
   instance_type = "t3a.medium"
   subnet_id     = aws_subnet.public_subnet_1.id
   associate_public_ip_address = true
-  security_groups = [aws_security_group.bastion_sg.name]
+  security_groups = [aws_security_group.bastion_sg.id]
   tags = {
     "Name" = "bastion1"
   }
 }
   
 resource "aws_instance" "wp_server_1" {
-  ami           = "ami-0d77c9d87c7e619f" # Change this to your RedHat AMI
+  ami           = "ami-0d77c9d87c7e619f9" # Change this to your RedHat AMI
   instance_type = "t3a.micro"
   subnet_id     = aws_subnet.wp_subnet_1.id
   tags = {
@@ -121,7 +121,7 @@ resource "aws_instance" "wp_server_1" {
 }
 
 resource "aws_instance" "wp_server_2" {
-  ami           = "aami-0d77c9d87c7e619f" # Change this to your RedHat AMI
+  ami           = "ami-0d77c9d87c7e619f9" # Change this to your RedHat AMI
   instance_type = "t3a.micro"
   subnet_id     = aws_subnet.wp_subnet_2.id
   tags = {
@@ -132,18 +132,28 @@ resource "aws_instance" "wp_server_2" {
   }
   
 }
+resource "aws_security_group" "rds_sg" {
+  vpc_id = aws_vpc.main_vpc.id
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+}
 
 # Create RDS Instance
-/*resource "aws_db_instance" "rds_instance" {
+resource "aws_db_instance" "rds_instance" {
   engine               = "postgres"
   instance_class       = "db.t3.micro"
-  name                 = "RDS1"
+  db_name = "RDS1"
+  username = "alain"
+  password = "alinosec"
   allocated_storage    = 20
   storage_type         = "gp2"
   vpc_security_group_ids = [aws_security_group.rds_sg.id]
-  subnet_group_name    = "default"
 }
-*/
 
 # Create ALB
 resource "aws_lb" "main_alb" {
