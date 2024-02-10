@@ -94,7 +94,32 @@ resource "aws_security_group" "bastion_sg" {
     protocol    = "-1"
     cidr_blocks = ["0.0.0.0/0"]
   }
+  ingress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+  
 }
+resource "aws_security_group" "wp_server" {
+  vpc_id = aws_vpc.main_vpc.id
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+  ingress {
+    from_port   = 22
+    to_port     = 22
+    protocol    = "tcp"
+    cidr_blocks = ["3.15.10.122/32"]
+  }
+  
+}
+
 
 # Create EC2 Instances
 resource "aws_instance" "bastion_instance" {
@@ -103,6 +128,17 @@ resource "aws_instance" "bastion_instance" {
   subnet_id     = aws_subnet.public_subnet_1.id
   associate_public_ip_address = true
   security_groups = [aws_security_group.bastion_sg.id]
+
+ user_data = <<-EOF
+    <powershell>
+    # Replace 'newusername' and 'newuserpassword' with desired values
+    $Username = "alain"
+    $Password = ConvertTo-SecureString -String "Alinosec87@" -AsPlainText -Force
+    New-LocalUser -Name $Username -Password $Password -FullName "New User" -Description "Created by Terraform" -UserMayNotChangePassword -PasswordNeverExpires
+    Add-LocalGroupMember -Group "Administrators" -Member $Username
+    </powershell>
+  EOF
+
   tags = {
     "Name" = "bastion1"
   }
@@ -118,6 +154,7 @@ resource "aws_instance" "wp_server_1" {
   root_block_device {
     volume_size = 20
   }
+  security_groups = [aws_security_group.wp_server.id]
 }
 
 resource "aws_instance" "wp_server_2" {
@@ -130,7 +167,7 @@ resource "aws_instance" "wp_server_2" {
   root_block_device {
     volume_size = 20
   }
-  
+security_groups = [aws_security_group.wp_server.id]
 }
 resource "aws_security_group" "rds_sg" {
   vpc_id = aws_vpc.main_vpc.id
@@ -142,6 +179,11 @@ resource "aws_security_group" "rds_sg" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 }
+resource "aws_db_subnet_group" "project_db_subnet_group" {
+  name = "project_db_subnet_group"
+  subnet_ids = [aws_subnet.db_subnet_2.id, aws_subnet.db_subnet_1.id]
+  
+}
 
 # Create RDS Instance
 resource "aws_db_instance" "rds_instance" {
@@ -150,6 +192,8 @@ resource "aws_db_instance" "rds_instance" {
   db_name = "RDS1"
   username = "alain"
   password = "alinosec"
+  identifier = "coalfire-db"
+  db_subnet_group_name = aws_db_subnet_group.project_db_subnet_group.name
   allocated_storage    = 20
   storage_type         = "gp2"
   vpc_security_group_ids = [aws_security_group.rds_sg.id]
@@ -164,16 +208,16 @@ resource "aws_lb" "main_alb" {
 }
 
 # Create ALB Listener
-#resource "aws_lb_listener" "main_alb_listener" {
-  #load_balancer_arn = aws_lb.main_alb.arn
-  #port              = 443
-  #protocol          = "HTTPS"
-
-  #default_action {
-    #type             = "forward"
-    #target_group_arn = aws_lb_target_group.wp_target_group.arn
-  #}
-#}
+resource "aws_lb_listener" "main_alb_listener" {
+  load_balancer_arn = aws_lb.main_alb.arn
+  port              = 443
+  protocol          = "HTTPS"
+  certificate_arn = "arn:aws:acm:us-east-2:112149621461:certificate/49c8d06c-affb-4989-b3f0-f7c1cf81961b"
+  default_action {
+  type             = "forward"
+  target_group_arn = aws_lb_target_group.wp_target_group.arn
+  }
+}
 
 # Create ALB Target Group
 resource "aws_lb_target_group" "wp_target_group" {
