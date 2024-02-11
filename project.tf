@@ -148,6 +148,12 @@ resource "aws_instance" "wp_server_1" {
   ami           = "ami-0d77c9d87c7e619f9" # Change this to your RedHat AMI
   instance_type = "t3a.micro"
   subnet_id     = aws_subnet.wp_subnet_1.id
+  connection {
+    type = "ssh"
+    user = "ec2-user"
+    password = var.ssh_key_name
+    host = self.private_ip
+  }
   tags = {
     Name = "wpserver1"
   }
@@ -161,6 +167,12 @@ resource "aws_instance" "wp_server_2" {
   ami           = "ami-0d77c9d87c7e619f9" # Change this to your RedHat AMI
   instance_type = "t3a.micro"
   subnet_id     = aws_subnet.wp_subnet_2.id
+  connection {
+    type = "ssh"
+    user = "ec2-user"
+    password = var.ssh_key_name
+    host = self.private_ip
+  }
   tags = {
     Name = "wpserver2"
   }
@@ -186,7 +198,7 @@ resource "aws_db_subnet_group" "project_db_subnet_group" {
 }
 
 # Create RDS Instance
-resource "aws_db_instance" "rds_instance" {
+ resource "aws_db_instance" "rds_instance" {
   engine               = "postgres"
   instance_class       = "db.t3.micro"
   db_name = "RDS1"
@@ -242,3 +254,8 @@ resource "aws_lb_target_group_attachment" "wp_target_group_attachment" {
   target_group_arn = aws_lb_target_group.wp_target_group.arn
   target_id        = aws_instance.wp_server_1.id
 }
+
+
+
+
+ 
